@@ -675,6 +675,7 @@ input[type=file]{display:none;}
   background:var(--surface);border:2.5px solid var(--line);
   border-radius:var(--radius-lg);width:100%;max-width:400px;
   max-height:70vh;display:flex;flex-direction:column;
+  overflow:hidden;
   animation:fadeIn .15s ease;
 }
 @keyframes fadeIn{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:scale(1);}}
@@ -1069,7 +1070,7 @@ input[type=file]{display:none;}
 <!-- 履歴ピッカーモーダル -->
 <div class="hist-modal-backdrop" id="histModal" onclick="closeHistPicker(event)">
   <div class="hist-modal-card" onclick="event.stopPropagation()">
-    <div class="hosp-modal-header">
+    <div class="hosp-modal-header" style="position:static;border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
       <div class="hosp-modal-title" id="histModalTitle">履歴から選択</div>
       <button class="modal-close" onclick="document.getElementById('histModal').classList.remove('show')" style="position:static;width:36px;height:36px">✕</button>
     </div>
@@ -1921,7 +1922,7 @@ function openHospDetail(hospName){
           <div class="sb-num">${warn}<span class="sb-unit">個</span></div>
           <div class="sb-lbl">要注意</div>
         </div>
-        <div class="sb-item sb-ng" style="cursor:pointer" onclick="openNgBedListByHosp('${hospName.replace(/'/g,"\\'")}')">
+        <div class="sb-item sb-ng" style="cursor:pointer" onclick="toggleNgBedsInModal('${hospName.replace(/'/g,"\\'")}')">
           <div class="sb-num">${ng}<span class="sb-unit">個</span></div>
           <div class="sb-lbl">要交換 ▸</div>
         </div>
@@ -2018,7 +2019,7 @@ function openHospDetail(hospName){
       }).join('')}
     </div>` : '';
 
-  document.getElementById('hospModalBody').innerHTML = statsHTML + wardHTML + modelsHTML + yearsHTML + myHTML;
+  document.getElementById('hospModalBody').innerHTML = statsHTML + wardHTML + modelsHTML + yearsHTML + myHTML + `<div id="ngBedsInModal"></div>`;
   document.getElementById('hospModal').classList.add('show');
 }
 
@@ -2039,6 +2040,46 @@ function closeHospModal(e){
 // ═══════════════════════════════════════════════════════
 function openNgBedList(){
   openNgBedListByHosp(null);
+}
+
+function toggleNgBedsInModal(hospName){
+  const el = document.getElementById('ngBedsInModal');
+  if(!el) return;
+  // 既に表示中なら閉じる
+  if(el.dataset.open === '1'){
+    el.innerHTML = '';
+    el.dataset.open = '0';
+    return;
+  }
+  const ngBeds = st.records.filter(r=>
+    r.hospital === hospName &&
+    Object.values(r.casters||{}).includes('要交換')
+  );
+  if(!ngBeds.length){
+    el.innerHTML = `<div class="detail-section"><div class="detail-title" style="color:var(--ng)">要交換ベッド</div><div style="font-size:13px;color:var(--text2);padding:8px 0">要交換のベッドはありません</div></div>`;
+    el.dataset.open = '1';
+    return;
+  }
+  const bedsHtml = ngBeds.map(r=>{
+    const loc = [r.ward, r.room, r.bed].filter(Boolean).join('-') || '－';
+    const ngPositions = CASTER_POSITIONS
+      .filter(({id})=>r.casters[id]==='要交換')
+      .map(({label})=>label).join('、');
+    return `<div class="ng-bed-item">
+      <div class="ng-bed-top">
+        <span class="ng-bed-loc">${loc}</span>
+        ${r.model?`<span class="ng-bed-model">${r.model}${r.year?`（${r.year}）`:''}</span>`:''}
+      </div>
+      <div class="ng-bed-pos"><span class="ng-bed-pos-lbl">要交換位置：</span>${ngPositions}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML = `<div class="detail-section">
+    <div class="detail-title" style="color:var(--ng)">要交換ベッド（${ngBeds.length}台）</div>
+    ${bedsHtml}
+  </div>`;
+  el.dataset.open = '1';
+  // スクロールして見えるように
+  el.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
 function openNgBedListByHosp(hospName){
