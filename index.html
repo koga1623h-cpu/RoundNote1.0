@@ -664,7 +664,29 @@ input[type=file]{display:none;}
 }
 .records-count-note strong{color:var(--text);font-weight:900;}
 
-/* 要交換ベッドリスト */
+/* ── 履歴ピッカー ── */
+.hist-wrap{display:flex;gap:0;width:100%;}
+.hist-input{flex:1;border-radius:8px 0 0 8px !important;border-right:none !important;}
+.hist-btn{
+  width:40px;flex-shrink:0;
+  border:2px solid var(--line);border-left:none;
+  border-radius:0 8px 8px 0;background:var(--surface2);
+  font-size:14px;color:var(--text2);cursor:pointer;
+  font-family:inherit;
+}
+.hist-btn:active{background:var(--surface);}
+.hist-pick-item{
+  padding:14px 16px;border-bottom:1px solid var(--line-thin);
+  font-size:15px;font-weight:500;cursor:pointer;color:var(--text);
+}
+.hist-pick-item:last-child{border-bottom:none;}
+.hist-pick-item:active{background:var(--surface2);}
+.hist-pick-empty{
+  padding:24px 16px;text-align:center;
+  color:var(--text2);font-size:13px;
+}
+
+/* ── 要交換ベッドリスト ── */
 .ng-bed-item{
   background:var(--ng-bg);border:1.5px solid var(--ng);
   border-radius:8px;padding:10px 12px;margin-bottom:6px;
@@ -780,36 +802,48 @@ input[type=file]{display:none;}
       </div>
       <div>
         <label>年式</label>
-        <input type="text" id="inp-year" inputmode="numeric" list="dl-year" autocomplete="off">
-        <datalist id="dl-year"></datalist>
+        <div class="hist-wrap">
+          <input type="text" id="inp-year" inputmode="numeric" class="hist-input">
+          <button class="hist-btn" onclick="openHistPicker('inp-year','year')" type="button">▾</button>
+        </div>
       </div>
     </div>
     <div class="row3" style="grid-template-columns:1fr 1fr">
       <div>
         <label>床番①</label>
-        <input type="text" id="inp-floor1" list="dl-floor1" autocomplete="off">
-        <datalist id="dl-floor1"></datalist>
+        <div class="hist-wrap">
+          <input type="text" id="inp-floor1" class="hist-input">
+          <button class="hist-btn" onclick="openHistPicker('inp-floor1','floor1')" type="button">▾</button>
+        </div>
       </div>
       <div>
         <label>床番②</label>
-        <input type="text" id="inp-floor2" list="dl-floor2" autocomplete="off">
-        <datalist id="dl-floor2"></datalist>
+        <div class="hist-wrap">
+          <input type="text" id="inp-floor2" class="hist-input">
+          <button class="hist-btn" onclick="openHistPicker('inp-floor2','floor2')" type="button">▾</button>
+        </div>
       </div>
     </div>
     <div class="form-row">
       <label>マットレス</label>
-      <input type="text" id="inp-mattress" list="dl-mattress" autocomplete="off">
-      <datalist id="dl-mattress"></datalist>
+      <div class="hist-wrap">
+        <input type="text" id="inp-mattress" class="hist-input">
+        <button class="hist-btn" onclick="openHistPicker('inp-mattress','mattress')" type="button">▾</button>
+      </div>
     </div>
     <div class="form-row">
       <label>見守り機器</label>
-      <input type="text" id="inp-monitor" list="dl-monitor" autocomplete="off">
-      <datalist id="dl-monitor"></datalist>
+      <div class="hist-wrap">
+        <input type="text" id="inp-monitor" class="hist-input">
+        <button class="hist-btn" onclick="openHistPicker('inp-monitor','monitor')" type="button">▾</button>
+      </div>
     </div>
     <div class="form-row">
       <label>TV</label>
-      <input type="text" id="inp-tv" list="dl-tv" autocomplete="off">
-      <datalist id="dl-tv"></datalist>
+      <div class="hist-wrap">
+        <input type="text" id="inp-tv" class="hist-input">
+        <button class="hist-btn" onclick="openHistPicker('inp-tv','tv')" type="button">▾</button>
+      </div>
     </div>
   </div>
 
@@ -1016,6 +1050,17 @@ input[type=file]{display:none;}
   <div class="card info-card">
     <div class="card-title"><svg class="ct-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>注意</div>
     <p>部位を削除しても既存の記録は残ります。<br>CSV出力の列は出力時点の部位リストに基づきます。</p>
+  </div>
+</div>
+
+<!-- 履歴ピッカーモーダル -->
+<div class="hosp-modal" id="histModal" onclick="closeHistPicker(event)">
+  <div class="hosp-modal-card" onclick="event.stopPropagation()" style="height:auto;max-height:60vh">
+    <div class="hosp-modal-header">
+      <div class="hosp-modal-title" id="histModalTitle">履歴から選択</div>
+      <button class="modal-close" onclick="document.getElementById('histModal').classList.remove('show')" style="position:static;width:36px;height:36px">✕</button>
+    </div>
+    <div class="hosp-modal-body" id="histModalBody"></div>
   </div>
 </div>
 
@@ -1281,27 +1326,57 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 
 // ═══════════════════════════════════════════════════════
-// 病院別入力履歴サジェスト
+// 病院別入力履歴ピッカー
 // ═══════════════════════════════════════════════════════
-function updateHospitalSuggestions(){
-  const hosp = document.getElementById('inp-hospital').value;
-  if(!hosp) return;
-  const recs = st.records.filter(r=>r.hospital===hosp);
+const HIST_LABELS = {
+  year:'年式', floor1:'床番①', floor2:'床番②',
+  mattress:'マットレス', monitor:'見守り機器', tv:'TV'
+};
 
-  const fields = [
-    {id:'dl-year',    key:'year'},
-    {id:'dl-floor1',  key:'floor1'},
-    {id:'dl-floor2',  key:'floor2'},
-    {id:'dl-mattress',key:'mattress'},
-    {id:'dl-monitor', key:'monitor'},
-    {id:'dl-tv',      key:'tv'},
-  ];
-  fields.forEach(({id, key})=>{
-    const dl = document.getElementById(id);
-    if(!dl) return;
-    const vals = [...new Set(recs.map(r=>r[key]||'').filter(Boolean))].sort();
-    dl.innerHTML = vals.map(v=>`<option value="${v}">`).join('');
-  });
+function updateHospitalSuggestions(){
+  // 病院変更時は特に何もしない（ピッカーは都度呼び出し）
+}
+
+function openHistPicker(inputId, key){
+  const hosp = document.getElementById('inp-hospital').value;
+  const modal = document.getElementById('histModal');
+  const title = document.getElementById('histModalTitle');
+  const body  = document.getElementById('histModalBody');
+
+  if(!hosp){
+    showToast('⚠️ 先に病院名を選択してください','warn');
+    return;
+  }
+
+  const recs = st.records.filter(r=>r.hospital===hosp);
+  const vals = [...new Set(recs.map(r=>r[key]||'').filter(Boolean))].sort();
+
+  title.textContent = `${HIST_LABELS[key]} — 履歴から選択`;
+
+  if(!vals.length){
+    body.innerHTML = `<div class="hist-pick-empty">この病院の履歴はまだありません</div>`;
+  } else {
+    body.innerHTML = vals.map(v=>
+      `<div class="hist-pick-item" onclick="pickHist('${inputId}','${v.replace(/'/g,"\\'")}')">
+        ${v}
+      </div>`
+    ).join('');
+  }
+
+  modal.classList.add('show');
+}
+
+function pickHist(inputId, val){
+  document.getElementById(inputId).value = val;
+  document.getElementById('histModal').classList.remove('show');
+  scheduleDraftSave();
+  updateSaveButtonState();
+}
+
+function closeHistPicker(e){
+  if(e && e.target && e.target.classList.contains('hosp-modal')){
+    document.getElementById('histModal').classList.remove('show');
+  }
 }
 
 // ═══════════════════════════════════════════════════════
