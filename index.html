@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiB2aWV3Qm94PSIwIDAgMTgwIDE4MCI+PHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIHJ4PSI0MCIgZmlsbD0iIzNlNjNiOSIvPjx0ZXh0IHg9IjkwIiB5PSIxMzUiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSIxMTAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlI8L3RleHQ+PC9zdmc+">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiB2aWV3Qm94PSIwIDAgMTgwIDE4MCI+PHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIHJ4PSI0MCIgZmlsbD0iIzNlNjNiOSIvPjx0ZXh0IHg9IjkwIiB5PSIxMzUiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSIxMTAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlI8L3RleHQ+PC9zdmc+">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#ffffff">
 <title>RoundNote</title>
@@ -67,7 +69,7 @@ body{
   background:var(--bg);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:14px;
-  animation:splashFadeOut .5s ease .9s forwards;
+  animation:splashFadeOut .5s ease 1.4s forwards;
 }
 .splash-logo{
   font-size:42px;font-weight:900;color:var(--text);
@@ -723,7 +725,6 @@ input[type=file]{display:none;}
     <span class="logo-main">RoundNote</span>
     <span class="logo-sub">ラウンド記録</span>
   </h1>
-  <span class="hbadge" id="totalBadge">0台</span>
 </header>
 
 <div class="tabs">
@@ -1154,7 +1155,7 @@ renderStorageMeter();
 document.getElementById('saveFooter').classList.add('show');
 
 function updateBadge(){
-  document.getElementById('totalBadge').textContent = st.records.length + '台';
+  // バッジ非表示のため処理なし
 }
 
 // ═══════════════════════════════════════════════════════
