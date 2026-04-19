@@ -583,7 +583,8 @@ input[type=file]{display:none;}
 .hosp-modal-card{
   background:var(--surface);border-top:3px solid var(--line);
   border-radius:18px 18px 0 0;width:100%;max-width:600px;
-  max-height:85vh;display:flex;flex-direction:column;
+  height:100vh;
+  display:flex;flex-direction:column;
   animation:slideUp .25s ease;
 }
 @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
@@ -722,7 +723,7 @@ input[type=file]{display:none;}
     <span class="logo-main">RoundNote</span>
     <span class="logo-sub">ラウンド記録</span>
   </h1>
-  <span class="hbadge" id="totalBadge">0件</span>
+  <span class="hbadge" id="totalBadge">0台</span>
 </header>
 
 <div class="tabs">
@@ -935,13 +936,6 @@ input[type=file]{display:none;}
 
 <!-- ===== 集計 ===== -->
 <div id="page-summary" class="page">
-  <div class="stats-grid stats-5" style="grid-template-columns:repeat(5,1fr)">
-    <div class="stat-box"><div class="stat-num" id="s-total">0<span class="unit">台</span></div><div class="stat-label">総台数</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:var(--ok)"   id="s-ok">0<span class="unit">個</span></div><div class="stat-label">正常</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:var(--warn)" id="s-warn">0<span class="unit">個</span></div><div class="stat-label">要注意</div></div>
-    <div class="stat-box stat-clickable" onclick="openNgBedList()"><div class="stat-num" style="color:var(--ng)"   id="s-ng">0<span class="unit">個</span></div><div class="stat-label">要交換 <span class="tap-hint">▸</span></div></div>
-    <div class="stat-box"><div class="stat-num" style="color:var(--done)" id="s-done">0<span class="unit">個</span></div><div class="stat-label">交換済</div></div>
-  </div>
   <div class="card">
     <div class="card-title"><svg class="ct-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M10 21v-5h4v5"/></svg>病院別 要交換率</div>
     <div id="hospitalRatio"></div>
@@ -1160,7 +1154,7 @@ renderStorageMeter();
 document.getElementById('saveFooter').classList.add('show');
 
 function updateBadge(){
-  document.getElementById('totalBadge').textContent = st.records.length + '件';
+  document.getElementById('totalBadge').textContent = st.records.length + '台';
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1621,7 +1615,7 @@ function renderList(){
   }
 
   const c = document.getElementById('listContainer');
-  if(!recs.length){ c.innerHTML='<div class="empty"><div class="empty-icon">📋</div>記録がありません</div>'; return; }
+  if(!recs.length){ c.innerHTML='<div class="empty">記録がありません</div>'; return; }
 
   c.innerHTML = recs.map(r=>{
     const expanded = expandedRecs.has(r.id);
@@ -1715,21 +1709,6 @@ function deleteRecord(id){
 // ═══════════════════════════════════════════════════════
 function renderSummary(){
   const recs=st.records;
-  let ngCount=0, warnCount=0, doneCount=0, okCount=0;
-  recs.forEach(r=>Object.values(r.casters||{}).forEach(v=>{
-    if(v==='要交換')ngCount++;
-    else if(v==='要注意')warnCount++;
-    else if(v==='交換済み')doneCount++;
-    else if(v==='正常')okCount++;
-  }));
-  const setNum = (id,val,unit)=>{
-    document.getElementById(id).innerHTML = `${val}<span class="unit">${unit}</span>`;
-  };
-  setNum('s-total', recs.length, '台');
-  setNum('s-ok',   okCount,      '個');
-  setNum('s-warn', warnCount,    '個');
-  setNum('s-ng',   ngCount,      '個');
-  setNum('s-done', doneCount,    '個');
 
   // 病院別要交換率
   const hMap = {};
@@ -1758,7 +1737,7 @@ function renderSummary(){
       <div class="hosp-name">${e.name}</div>
       <div class="hosp-stat">
         <span class="hosp-rate ${cls}">${e.rate.toFixed(1)}%</span>
-        <span class="hosp-sub">${e.ng} / ${e.total}（${e.records}件）</span>
+        <span class="hosp-sub">${e.ng}個 / ${e.total}個（${e.records}台）</span>
       </div>
       <svg class="hosp-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     </div>`;
@@ -1813,9 +1792,9 @@ function openHospDetail(hospName){
           <div class="sb-num">${warn}<span class="sb-unit">個</span></div>
           <div class="sb-lbl">要注意</div>
         </div>
-        <div class="sb-item sb-ng">
+        <div class="sb-item sb-ng" style="cursor:pointer" onclick="openNgBedListByHosp('${hospName.replace(/'/g,"\\'")}')">
           <div class="sb-num">${ng}<span class="sb-unit">個</span></div>
-          <div class="sb-lbl">要交換</div>
+          <div class="sb-lbl">要交換 ▸</div>
         </div>
         <div class="sb-item sb-done">
           <div class="sb-num">${done}<span class="sb-unit">個</span></div>
@@ -1844,7 +1823,7 @@ function openHospDetail(hospName){
     if(isNaN(na) && isNaN(nb)) return 0;
     if(isNaN(na)) return 1;
     if(isNaN(nb)) return -1;
-    return nb - na;
+    return na - nb; // 昇順（古い順）
   });
   const yearsHTML = `
     <div class="detail-section">
@@ -1891,24 +1870,31 @@ function closeHospModal(e){
 // 要交換ベッド一覧モーダル
 // ═══════════════════════════════════════════════════════
 function openNgBedList(){
-  // 要交換が1つ以上あるベッドを抽出
+  openNgBedListByHosp(null);
+}
+
+function openNgBedListByHosp(hospName){
   const ngBeds = st.records.filter(r=>
-    Object.values(r.casters||{}).includes('要交換')
+    Object.values(r.casters||{}).includes('要交換') &&
+    (hospName === null || r.hospital === hospName)
   );
 
-  document.getElementById('ngModalTitle').textContent = `要交換ベッド一覧（${ngBeds.length}台）`;
+  const title = hospName
+    ? `${hospName}　要交換（${ngBeds.length}台）`
+    : `要交換ベッド一覧（${ngBeds.length}台）`;
+  document.getElementById('ngModalTitle').textContent = title;
 
   if(!ngBeds.length){
     document.getElementById('ngModalBody').innerHTML =
-      '<div class="empty" style="padding:40px 20px"><div class="empty-icon">✓</div>要交換のベッドはありません</div>';
+      '<div class="empty" style="padding:40px 20px">要交換のベッドはありません</div>';
     document.getElementById('ngModal').classList.add('show');
     return;
   }
 
-  // 病院別にグループ化
+  // 病院別にグループ化（全病院表示時のみ）
   const grouped = {};
   ngBeds.forEach(r=>{
-    const key = r.hospital || '（未記入）';
+    const key = hospName ? '' : (r.hospital || '（未記入）');
     if(!grouped[key]) grouped[key] = [];
     grouped[key].push(r);
   });
@@ -1916,7 +1902,6 @@ function openNgBedList(){
   const html = Object.entries(grouped).map(([hosp, beds])=>{
     const bedsHtml = beds.map(r=>{
       const loc = [r.ward, r.room, r.bed].filter(Boolean).join('-') || '－';
-      // 要交換のあるキャスター位置
       const ngPositions = CASTER_POSITIONS
         .filter(({id})=>r.casters[id]==='要交換')
         .map(({label})=>label)
@@ -1931,10 +1916,8 @@ function openNgBedList(){
         </div>
       </div>`;
     }).join('');
-    return `<div class="detail-section">
-      <div class="detail-title">${hosp}（${beds.length}台）</div>
-      ${bedsHtml}
-    </div>`;
+    const sectionTitle = hosp ? `<div class="detail-title">${hosp}（${beds.length}台）</div>` : '';
+    return `<div class="detail-section">${sectionTitle}${bedsHtml}</div>`;
   }).join('');
 
   document.getElementById('ngModalBody').innerHTML = html;
@@ -1972,7 +1955,7 @@ function renderStorageMeter(){
     note.textContent = '写真：' + Object.keys(photoStore).length + '枚 / 記録：' + st.records.length + '件 / 残量注意';
     note.style.color = 'var(--warn)';
   }else{
-    note.textContent = '写真：' + Object.keys(photoStore).length + '枚 / 記録：' + st.records.length + '件';
+    note.textContent = '写真：' + Object.keys(photoStore).length + '枚 / 記録：' + st.records.length + '台';
     note.style.color = 'var(--text2)';
   }
 }
